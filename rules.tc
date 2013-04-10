@@ -1,24 +1,69 @@
 #include "fields.tc"
 #include "ports.tc"
 
-dev "enp2s1" {
-    egress {
-        // classification
+#define INTERFACE enp2s1
 
-        class (<$high>)
-            if tcp_dport == PORT_HTTP;
-        class (<$low>)
-            if 1;
+dev INTERFACE {
+        egress {
+                /* Define a class for IMAP traffic */
+                class(<$mail>)
+                        if tcp_sport == 143
+                ;
 
-        // queuing
+                /* Define a class for Web traffic */
+                class( <$web> )
+                        if ip_len < 512 && tcp_sport == 80
+                        if ip_len < 512 && tcp_sport == PORT_HTTPS
+                ;
 
-        prio {
-            $high = class (1) {
-                fifo (limit 20kB);
-            }
-            $low = class (2) {
-                fifo (limit 100kB);
-            }
+                 class( <$ack> )
+                      if icmp_type == 0
+                      if icmp_type == 8
+                    ;
+
+                class(<$ssh>)
+                    if tcp_dport == 22
+                    if tcp_sport == 22
+                ;
+
+                class(<$dns>)
+                    if tcp_dport == 53
+                    if udp_dport == 53
+                ;
+
+                class(<$bittorrent>)
+                    if tcp_sport == 6882
+                ;
+
+                class(<$def>)
+                    if 1
+                ;
+
+                /* Configure our classful qdisc */
+                htb () {
+                  class (rate 2048kbps, ceil 2048kbps) {
+                        $ack = class(rate 1024kbps, ceil 2048kbps) {
+                                sfq;
+                        }
+                        $dns = class(rate 512kbps, ceil 2048kbps) {
+                                sfq;
+                        }
+                        $web = class(rate 512kbps, ceil 2048kbps) {
+                                sfq;
+                        }
+                        $mail = class(rate 10kbps, ceil 2048kbps) {
+                                sfq;
+                        }
+                        $ssh = class(rate 1024kbps, ceil 2048kbps) {
+                                sfq;
+                        }
+                        $bittorrent = class(rate 10kbps, ceil 2048kbps) {
+                                sfq;
+                        }
+                        $def = class(rate 10kbps, ceil 2048kbps) {
+                                sfq;
+                        }
+                  }
+                } 
         }
-    }
 }
