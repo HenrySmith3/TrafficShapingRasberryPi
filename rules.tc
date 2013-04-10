@@ -1,0 +1,24 @@
+#include "fields.tc"
+#include "ports.tc"
+
+dev "enp2s1" {
+    egress {
+        // classification
+
+        class (<$high>)
+            if tcp_dport == PORT_HTTP;
+        class (<$low>)
+            if 1;
+
+        // queuing
+
+        prio {
+            $high = class (1) {
+                fifo (limit 20kB);
+            }
+            $low = class (2) {
+                fifo (limit 100kB);
+            }
+        }
+    }
+}
