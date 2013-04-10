@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="jnetpcap-src-1.3.0-1/|jnetpcap-src-1.3.0-1/src/java1.5/|jnetpcap-src-1.3.0-1/src/java1.5/org/|jnetpcap-src-1.3.0-1/src/java1.5/org/" kind="src" path=""/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="jnetpcap-src-1.3.0-1/src/java1.5"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
