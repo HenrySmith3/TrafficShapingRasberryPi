@@ -1,0 +1,86 @@
+#!/bin/sh
+# init script written by shane at knowplace dot org
+# this script only creates the qdiscs and classes required for shaping, it
+# does NOT create the necessary filters
+
+INTERFACE='enp2s1'
+rc_done="  done"
+rc_failed="  failed"
+
+return=$rc_done
+
+TC='/usr/sbin/tc'
+
+tc_reset ()
+{
+  # Reset everything to a known state (cleared)
+  $TC qdisc del dev $INTERFACE root 2> /dev/null > /dev/null
+}
+
+tc_status ()
+{
+    echo "[qdisc - $INTERFACE]"
+    $TC -s qdisc show dev $INTERFACE
+    echo "------------------------"
+    echo
+    echo "[class - $INTERFACE]"
+    $TC -s class show dev $INTERFACE
+}
+
+tc_showfilter ()
+{
+    echo "[filter - $INTERFACE]"
+    $TC -s filter show dev $INTERFACE
+}
+
+case "$1" in
+
+    start)
+  echo -n "Starting traffic shaping"
+  tc_reset
+  U320="$TC filter add dev $INTERFACE protocol ip parent 1:0 prio 0 u32"
+  #
+  # dev eth0 - creating qdiscs & classes
+  #
+  $TC qdisc add dev $INTERFACE root handle 1: htb default 60
+  $TC class add dev $INTERFACE parent 1: classid 1:1 htb rate 116kbit
+  $TC class add dev $INTERFACE parent 1:1 classid 1:10 htb rate 32kbit ceil 116kbit prio 0
+  $TC class add dev $INTERFACE parent 1:1 classid 1:20 htb rate 22kbit ceil 116kbit prio 1
+  $TC class add dev $INTERFACE parent 1:1 classid 1:30 htb rate 22kbit ceil 116kbit prio 2
+  $TC class add dev $INTERFACE parent 1:1 classid 1:40 htb rate 20kbit ceil 116kbit prio 3
+  $TC class add dev $INTERFACE parent 1:1 classid 1:50 htb rate 18kbit ceil 116kbit prio 4
+  $TC class add dev $INTERFACE parent 1:1 classid 1:60 htb rate 2kbit ceil 116kbit prio 5
+  $TC qdisc add dev $INTERFACE parent 1:10 handle 10: sfq perturb 10
+  $TC qdisc add dev $INTERFACE parent 1:20 handle 20: sfq perturb 10
+  $TC qdisc add dev $INTERFACE parent 1:30 handle 30: sfq perturb 10
+  $TC qdisc add dev $INTERFACE parent 1:40 handle 40: sfq perturb 10
+  $TC qdisc add dev $INTERFACE parent 1:50 handle 50: sfq perturb 10
+  $TC qdisc add dev $INTERFACE parent 1:60 handle 60: sfq perturb 10
+  tc_status
+  ;;
+
+     stop)
+  echo -n "Stopping traffic shaper"
+  tc_reset || return=$rc_failed
+  echo -e "$return"
+  ;;
+  
+    restart|reload)
+  $0 stop && $0 start || return=$rc_failed
+  ;;
+        
+    stats|status)
+  tc_status
+  ;;
+
+    filter)
+  tc_showfilter
+  ;;
+
+    *)
+  echo "Usage: $0 {start|stop|restart|stats|filter}"
+  exit 1
+
+esac
+test "$return" = "$rc_done" || exit 1
+
