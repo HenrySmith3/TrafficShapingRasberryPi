@@ -48,10 +48,10 @@ dev INTERFACE {
                         $dns = class(rate 512kbps, ceil 2048kbps) {
                                 sfq;
                         }
-                        $web = class(rate 512kbps, ceil 2048kbps) {
+                        $web = class(rate 1024kbps, ceil 2048kbps) {
                                 sfq;
                         }
-                        $mail = class(rate 10kbps, ceil 2048kbps) {
+                        $mail = class(rate 100kbps, ceil 2048kbps) {
                                 sfq;
                         }
                         $ssh = class(rate 1024kbps, ceil 2048kbps) {
@@ -66,4 +66,5 @@ dev INTERFACE {
                   }
                 } 
         }
+
 }
