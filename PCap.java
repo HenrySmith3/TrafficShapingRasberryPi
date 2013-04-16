@@ -30,6 +30,16 @@ import org.jnetpcap.protocol.tcpip.Tcp;
  */
 public class PCap {
 
+
+    final static Map<Integer, Integer> sizeMap = new HashMap<Integer, Integer>();
+    final static Map<Integer, Integer> destMap = new HashMap<Integer, Integer>();
+    final static Map<Integer, Integer> sourceMap = new HashMap<Integer, Integer>();
+
+    final static Map<Integer, Integer> TCPwindowSizeTotalMap = new HashMap<Integer, Integer>();
+    final static Map<Integer, Integer> TCPnumPacketsMap = new HashMap<Integer, Integer>();
+
+    final static int SIZE_THRESHOLD = 100;//average size of packet before we get suspicious.
+
     /**
      * Main startup method 
      *
@@ -40,13 +50,6 @@ public class PCap {
         List<PcapIf> alldevs = new ArrayList<PcapIf>(); // Will be filled with NICs  
         StringBuilder errbuf = new StringBuilder(); // For any error msgs
         final List<PcapPacket> packets = new ArrayList<PcapPacket>();
-        final Map<Integer, Integer> sizeMap = new HashMap<Integer, Integer>();
-        final Map<Integer, Integer> destMap = new HashMap<Integer, Integer>();
-        
-        final Map<Integer, Integer> TCPwindowSizeTotalMap = new HashMap<Integer, Integer>();
-        final Map<Integer, Integer> TCPnumPacketsMap = new HashMap<Integer, Integer>();
-        
-        final int SIZE_THRESHOLD = 100;//average size of packet before we get suspicious.
 
         /*************************************************************************** 
          * First get a list of devices on this system 
@@ -105,47 +108,8 @@ public class PCap {
                 );
                 packets.add(packet);
 
-                //handling of packet size
-                //sizeMap maps the destination of a packet to the total size of packets at that place.
-                //destMap maps the destination of a packet to the total number of packets at that place.
-                //I'm assuming that we're looking at the average packet size per destination, not
-                //the average packet size overall.
-                //this probably could have been done better.
-                for (PcapPacket pack : packets) {
-                    Ip4 ip = packet.getHeader(new Ip4()); //Shouldn't this be "pack" instead of "packet"?
-                    if (null != ip) {
-                        int destinationInt = ip.destinationToInt();
-                        if (sizeMap.containsKey(destinationInt)) {
-                            sizeMap.put(destinationInt, sizeMap.get(destinationInt) + pack.getTotalSize());
-                            destMap.put(destinationInt, destMap.get(destinationInt) + 1);
-                        }
-                        else {
-                            sizeMap.put(destinationInt, pack.getTotalSize());
-                            destMap.put(destinationInt, 1);
-                        }
-                    }
-                    
-                    Tcp tcp = new Tcp();
-                    if (pack.hasHeader(tcp))
-                    {
-                    	int dest = tcp.destination();
-                    	if (TCPwindowSizeTotalMap.containsKey(dest))
-                    	{
-                    		TCPwindowSizeTotalMap.put(dest, TCPwindowSizeTotalMap.get(dest) + tcp.window());
-                    		TCPnumPacketsMap.put(dest, TCPnumPacketsMap.get(dest) + 1);
-                    	}
-                    	else
-                    	{
-                    		TCPwindowSizeTotalMap.put(dest, tcp.window());
-                    		TCPnumPacketsMap.put(dest, 1);
-                    	}
-                    }
-                }
-                for (Integer key : sizeMap.keySet()) {
-                    if (sizeMap.get(key) / destMap.get(key) > SIZE_THRESHOLD) {
-                        //do something, the average packet is too big.
-                    }
-                }
+                packetSizeChecking(packet);
+                System.out.println(getTopTrafficHosts());
 
             }
         };
@@ -164,5 +128,68 @@ public class PCap {
          * Last thing to do is close the pcap handle 
          **************************************************************************/
         pcap.close();
+    }
+    public static boolean packetSizeChecking(PcapPacket packet) {
+        //handling of packet size
+        //sizeMap maps the destination of a packet to the total size of packets at that place.
+        //destMap maps the destination of a packet to the total number of packets at that place.
+        //sourceMap maps the source to the total size of packets coming from that source.
+        //I'm assuming that we're looking at the average packet size per destination, not
+        //the average packet size overall.
+        //this probably could have been done better.
+        Ip4 ip = packet.getHeader(new Ip4());
+        if (null != ip) {
+            int destinationInt = ip.destinationToInt();
+            if (sizeMap.containsKey(destinationInt)) {
+                sizeMap.put(destinationInt, sizeMap.get(destinationInt) + packet.getTotalSize());
+                destMap.put(destinationInt, destMap.get(destinationInt) + 1);
+            }
+            else {
+                sizeMap.put(destinationInt, packet.getTotalSize());
+                destMap.put(destinationInt, 1);
+            }
+
+            int sourceInt = ip.sourceToInt();
+            if (sourceMap.containsKey(sourceInt)) {
+                sourceMap.put(sourceInt, sourceMap.get(sourceInt) + packet.getTotalSize());
+            } else {
+                sourceMap.put(sourceInt, packet.getTotalSize());
+            }
+        }
+
+        Tcp tcp = new Tcp();
+        if (packet.hasHeader(tcp))
+        {
+            int dest = tcp.destination();
+            if (TCPwindowSizeTotalMap.containsKey(dest))
+            {
+                TCPwindowSizeTotalMap.put(dest, TCPwindowSizeTotalMap.get(dest) + tcp.window());
+                TCPnumPacketsMap.put(dest, TCPnumPacketsMap.get(dest) + 1);
+            }
+            else
+            {
+                TCPwindowSizeTotalMap.put(dest, tcp.window());
+                TCPnumPacketsMap.put(dest, 1);
+            }
+        }
+        for (Integer key : sizeMap.keySet()) {
+            if (sizeMap.get(key) / destMap.get(key) > SIZE_THRESHOLD) {
+                //do something, the average packet is too big.
+                return false;//action needed
+            }
+        }
+        return true;//no action needed
+    }
+    public static Map<Integer, Integer> getTopTrafficHosts() {
+        SortedSet<Integer> keys = new TreeSet<Integer>(sourceMap.keySet());
+        Map<Integer, Integer> sortedMap = new TreeMap<Integer, Integer>();
+        for (Integer key : keys) {
+            sortedMap.put(key, sourceMap.get(key));
+            if (sortedMap.size() >= 5) {
+                return sortedMap;
+            }
+
+        }
+        return sortedMap;
     }
 }  
