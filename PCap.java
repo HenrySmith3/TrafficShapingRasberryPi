@@ -31,9 +31,9 @@ import org.jnetpcap.protocol.tcpip.Tcp;
 public class PCap {
 
 
-    final static Map<Integer, Integer> sizeMap = new HashMap<Integer, Integer>();
-    final static Map<Integer, Integer> destMap = new HashMap<Integer, Integer>();
-    final static Map<Integer, Integer> sourceMap = new HashMap<Integer, Integer>();
+    final static Map<String, Integer> sizeMap = new HashMap<String, Integer>();
+    final static Map<String, Integer> destMap = new HashMap<String, Integer>();
+    final static Map<String, Integer> sourceMap = new HashMap<String, Integer>();
     static int packetCount;
     static int packetPerSecond;
     static int[] packetCountArr;
@@ -136,6 +136,7 @@ public class PCap {
                     System.out.println("Throttling INTERWEBZ");
 //                    tc.up();
                 }
+                packetSizeChecking(packet);
                 System.out.println(getTopTrafficHosts());
 
             }
@@ -167,40 +168,25 @@ public class PCap {
         //this probably could have been done better.
         Ip4 ip = packet.getHeader(new Ip4());
         if (null != ip) {
-            int destinationInt = ip.destinationToInt();
-            if (sizeMap.containsKey(destinationInt)) {
-                sizeMap.put(destinationInt, sizeMap.get(destinationInt) + packet.getTotalSize());
-                destMap.put(destinationInt, destMap.get(destinationInt) + 1);
+            String destination = toIp(ip.destination());
+            if (sizeMap.containsKey(destination)) {
+                sizeMap.put(destination, sizeMap.get(destination) + packet.getTotalSize());
+                destMap.put(destination, destMap.get(destination) + 1);
             }
             else {
-                sizeMap.put(destinationInt, packet.getTotalSize());
-                destMap.put(destinationInt, 1);
+                sizeMap.put(destination, packet.getTotalSize());
+                destMap.put(destination, 1);
             }
 
-            int sourceInt = ip.sourceToInt();
-            if (sourceMap.containsKey(sourceInt)) {
-                sourceMap.put(sourceInt, sourceMap.get(sourceInt) + packet.getTotalSize());
+            String source = toIp(ip.source());
+            if (sourceMap.containsKey(source)) {
+                sourceMap.put(source, sourceMap.get(source) + packet.getTotalSize());
             } else {
-                sourceMap.put(sourceInt, packet.getTotalSize());
+                sourceMap.put(source, packet.getTotalSize());
             }
         }
 
-        Tcp tcp = new Tcp();
-        if (packet.hasHeader(tcp))
-        {
-            int dest = tcp.destination();
-            if (TCPwindowSizeTotalMap.containsKey(dest))
-            {
-                TCPwindowSizeTotalMap.put(dest, TCPwindowSizeTotalMap.get(dest) + tcp.window());
-                TCPnumPacketsMap.put(dest, TCPnumPacketsMap.get(dest) + 1);
-            }
-            else
-            {
-                TCPwindowSizeTotalMap.put(dest, tcp.window());
-                TCPnumPacketsMap.put(dest, 1);
-            }
-        }
-        for (Integer key : sizeMap.keySet()) {
+        for (String key : sizeMap.keySet()) {
             if (sizeMap.get(key) / destMap.get(key) > SIZE_THRESHOLD) {
                 //do something, the average packet is too big.
                 return false;//action needed
@@ -209,10 +195,10 @@ public class PCap {
         return true;//no action needed
     }
 
-    public static Map<Integer, Integer> getTopTrafficHosts() {
-        SortedSet<Integer> keys = new TreeSet<Integer>(sourceMap.keySet());
-        Map<Integer, Integer> sortedMap = new TreeMap<Integer, Integer>();
-        for (Integer key : keys) {
+    public static Map<String, Integer> getTopTrafficHosts() {
+        SortedSet<String> keys = new TreeSet<String>(sourceMap.keySet());
+        Map<String, Integer> sortedMap = new TreeMap<String, Integer>();
+        for (String key : keys) {
             sortedMap.put(key, sourceMap.get(key));
             if (sortedMap.size() >= 5) {
                 return sortedMap;
@@ -236,5 +222,35 @@ public class PCap {
         averageCount = temp / 10;
 
         return averageCount > PACKET_NUM_THRES;
+    }
+
+    public static boolean windowSizeCheck(PcapPacket packet) {
+
+        Tcp tcp = new Tcp();
+        if (packet.hasHeader(tcp))
+        {
+            int dest = tcp.destination();
+            if (TCPwindowSizeTotalMap.containsKey(dest))
+            {
+                TCPwindowSizeTotalMap.put(dest, TCPwindowSizeTotalMap.get(dest) + tcp.window());
+                TCPnumPacketsMap.put(dest, TCPnumPacketsMap.get(dest) + 1);
+            }
+            else
+            {
+                TCPwindowSizeTotalMap.put(dest, tcp.window());
+                TCPnumPacketsMap.put(dest, 1);
+            }
+        }
+        return true;
+    }
+
+    public static String toIp(byte[] array) {
+        String retVal = "";
+        for (byte item : array) {
+            Integer num = Integer.valueOf(item);
+            retVal += ((num < 0) ? num + 256 : num) + ".";
+        }
+        retVal = retVal.substring(0, retVal.length()-1);
+        return retVal;
     }
 }  
