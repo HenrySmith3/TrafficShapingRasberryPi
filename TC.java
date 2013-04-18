@@ -20,6 +20,22 @@ public class TC {
           tc.up();
 //          tc.down();
         }
+
+        public void setRate(int rate) {
+          int oldRate = this.rate;
+          this.rate = rate;
+
+          for(int i = 0; i < rules.length; i++){
+                  if(rules[i] != null && rules[i].length() > 1)
+                          rules[i].replaceAll(oldRate + "", rate + "");
+          }
+          int oldLevel = level;
+          while(level > 0)
+                  down();
+          while(level < oldLevel)
+                  up();
+        }
+
         public TC(String eth) {
                 this.eth = eth;
                 level = 0;
