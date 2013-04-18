@@ -1,3 +1,6 @@
+
+# =============================== Device wlan0 ===============================
+
 tc qdisc add dev wlan0 handle 1:0 root dsmark indices 8 default_index 0
 tc qdisc add dev wlan0 handle 2:0 parent 1:0 htb
 tc class add dev wlan0 parent 2:0 classid 2:1 htb rate 256000bps ceil 256000bps

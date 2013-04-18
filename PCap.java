@@ -34,11 +34,16 @@ public class PCap {
     final static Map<Integer, Integer> sizeMap = new HashMap<Integer, Integer>();
     final static Map<Integer, Integer> destMap = new HashMap<Integer, Integer>();
     final static Map<Integer, Integer> sourceMap = new HashMap<Integer, Integer>();
+    static int packetCount;
+    static int packetPerSecond;
+    static int[] packetCountArr;
+    static int packetCountArrInd;
 
     final static Map<Integer, Integer> TCPwindowSizeTotalMap = new HashMap<Integer, Integer>();
     final static Map<Integer, Integer> TCPnumPacketsMap = new HashMap<Integer, Integer>();
 
     final static int SIZE_THRESHOLD = 100;//average size of packet before we get suspicious.
+    final static int PACKET_NUM_THRES = 1000;
 
     /**
      * Main startup method 
@@ -50,6 +55,8 @@ public class PCap {
         List<PcapIf> alldevs = new ArrayList<PcapIf>(); // Will be filled with NICs  
         StringBuilder errbuf = new StringBuilder(); // For any error msgs
         final List<PcapPacket> packets = new ArrayList<PcapPacket>();
+        packetCount = 0;
+        packetCountArr = new int[10];
 
         /*************************************************************************** 
          * First get a list of devices on this system 
@@ -92,6 +99,19 @@ public class PCap {
             return;
         }
 
+        final TC tc = new TC("wlan0");
+
+        Timer timer = new Timer();
+
+        timer.schedule( new TimerTask() {
+            public void run() {
+                if (!packetCounter()) {
+//                    tc.up();
+                     System.out.println("THROTTLE MOAR INTERWEBZ");
+                }
+            }
+        }, 0, 1000);
+
         /*************************************************************************** 
          * Third we create a packet handler which will receive packets from the 
          * libpcap loop. 
@@ -108,7 +128,14 @@ public class PCap {
                 );
                 packets.add(packet);
 
-                packetSizeChecking(packet);
+                packetCount++;
+
+                System.out.println("Packets per second: " + packetPerSecond);
+
+                if (!packetSizeChecking(packet)) {
+                    System.out.println("Throttling INTERWEBZ");
+//                    tc.up();
+                }
                 System.out.println(getTopTrafficHosts());
 
             }
@@ -122,13 +149,14 @@ public class PCap {
          * the loop method exists that allows the programmer to sepecify exactly 
          * which protocol ID to use as the data link type for this pcap interface. 
          **************************************************************************/
-        pcap.loop(10, jpacketHandler, "jNetPcap rocks!");
+        pcap.loop(Pcap.LOOP_INFINITE, jpacketHandler, "jNetPcap rocks!");
 
         /*************************************************************************** 
          * Last thing to do is close the pcap handle 
          **************************************************************************/
         pcap.close();
     }
+
     public static boolean packetSizeChecking(PcapPacket packet) {
         //handling of packet size
         //sizeMap maps the destination of a packet to the total size of packets at that place.
@@ -180,6 +208,7 @@ public class PCap {
         }
         return true;//no action needed
     }
+
     public static Map<Integer, Integer> getTopTrafficHosts() {
         SortedSet<Integer> keys = new TreeSet<Integer>(sourceMap.keySet());
         Map<Integer, Integer> sortedMap = new TreeMap<Integer, Integer>();
@@ -191,5 +220,21 @@ public class PCap {
 
         }
         return sortedMap;
+    }
+
+    public static boolean packetCounter() {
+        packetCountArr[packetCountArrInd] = packetCount;
+        packetCount = 0;
+        packetCountArrInd = (packetCountArrInd + 1) % 10;
+
+        float averageCount;
+        int temp = 0;
+        for (int ii = 0; ii < packetCountArr.length; ii++) {
+            temp += packetCountArr[ii];
+        }
+
+        averageCount = temp / 10;
+
+        return averageCount > PACKET_NUM_THRES;
     }
 }  

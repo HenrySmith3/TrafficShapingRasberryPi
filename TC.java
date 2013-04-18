@@ -16,16 +16,16 @@ public class TC {
         String rules[];
 
         public static void main(String[] args) {
-          TC tc = new TC("eth0");
+          TC tc = new TC("wlan0");
           tc.up();
-          tc.down();
+//          tc.down();
         }
         public TC(String eth) {
                 this.eth = eth;
                 level = 0;
                 envp = new String[1];
                 envp[0] = "PATH=" + System.getProperty("java.library.path");
-                rate = 256000;
+                rate = 2560;
                 loadRules();
         }
 
@@ -73,7 +73,8 @@ public class TC {
                         count++;
                 }
                 } catch (FileNotFoundException e) {
-
+                    e.printStackTrace();
+                    System.out.println("ERRROR ERROR ERROR");
                 }
         }
 }
