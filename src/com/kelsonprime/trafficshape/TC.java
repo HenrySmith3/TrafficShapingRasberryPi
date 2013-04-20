@@ -18,7 +18,7 @@ public class TC {
         String rules[];
 
         public static void main(String[] args) {
-          TC tc = new TC("wlan0");
+          TC tc = new TC("eth0");
           tc.up();
 //          tc.down();
         }
