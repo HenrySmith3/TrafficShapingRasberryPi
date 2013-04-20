@@ -37,6 +37,7 @@ public class PCap {
     final static Map<String, Integer> destMap = new HashMap<String, Integer>();
     final static Map<String, Integer> sourceMap = new HashMap<String, Integer>();
     static int packetCount;
+    static int lastPacketCount;
     static int[] packetCountArr;
     static int packetCountArrInd;
     static boolean packetCountTCUpFlag;
@@ -224,8 +225,8 @@ public class PCap {
     }
 
     public static float packetCounter() {
-        packetCountArr[packetCountArrInd] = packetCount;
-        packetCount = 0;
+        packetCountArr[packetCountArrInd] = packetCount - lastPacketCount;
+        lastPacketCount = packetCount;
         packetCountArrInd = (packetCountArrInd + 1) % 10;
 
         float averageCount;
