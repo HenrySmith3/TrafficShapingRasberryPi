@@ -75,14 +75,16 @@ public class PCap {
         System.out.println("Network devices found:");
 
         int i = 0;
+		int ethIndex = 0;
         for (PcapIf device : alldevs) {
+			if(device.getName() == "eth0") ethIndex = i;
             String description =
                     (device.getDescription() != null) ? device.getDescription()
                             : "No description available";
             System.out.printf("#%d: %s [%s]\n", i++, device.getName(), description);
         }
 
-        PcapIf device = alldevs.get(1); // We know we have atleast 1 device
+        PcapIf device = alldevs.get(ethIndex); // We know we have atleast 1 device
         System.out
                 .printf("\nChoosing '%s' on your behalf:\n",
                         (device.getDescription() != null) ? device.getDescription()
