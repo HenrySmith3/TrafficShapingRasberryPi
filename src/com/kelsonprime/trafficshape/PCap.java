@@ -101,16 +101,24 @@ public class PCap {
             return;
         }
 
-        final TC tc = new TC("wlan0");
+        final TC tc = new TC("eth0");
 
         Timer timer = new Timer();
 
         timer.schedule( new TimerTask() {
             public void run() {
+				System.out.println("Packets per second: " + packetPerSecond);
                 if (!packetCounter()) {
 //                    tc.up();
                      System.out.println("THROTTLE MOAR INTERWEBZ");
                 }
+				
+                if (!checkPacketSize()) {
+                    System.out.println("Throttling INTERWEBZ");
+//                    tc.up();
+                }
+
+                System.out.println(getTopTrafficHosts());
             }
         }, 0, 1000);
 
@@ -122,24 +130,19 @@ public class PCap {
 
             public void nextPacket(PcapPacket packet, String user) {
 
-                System.out.printf("Received packet at %s caplen=%-4d len=%-4d %s\n",
+                /*System.out.printf("Received packet at %s caplen=%-4d len=%-4d %s\n",
                         new Date(packet.getCaptureHeader().timestampInMillis()),
                         packet.getCaptureHeader().caplen(),  // Length actually captured
                         packet.getCaptureHeader().wirelen(), // Original length
                         user                                 // User supplied object
-                );
+                );*/
                 packets.add(packet);
 
                 packetCount++;
 
-                System.out.println("Packets per second: " + packetPerSecond);
+                //System.out.println("Packets per second: " + packetPerSecond);
 
-                if (!packetSizeChecking(packet)) {
-                    System.out.println("Throttling INTERWEBZ");
-//                    tc.up();
-                }
-                packetSizeChecking(packet);
-                System.out.println(getTopTrafficHosts());
+				addPacketSizeToMaps(packet);
 
             }
         };
@@ -152,7 +155,7 @@ public class PCap {
          * the loop method exists that allows the programmer to sepecify exactly 
          * which protocol ID to use as the data link type for this pcap interface. 
          **************************************************************************/
-        pcap.loop(Pcap.LOOP_INFINITE, jpacketHandler, "jNetPcap rocks!");
+        pcap.loop(Pcap.LOOP_INFINITE, jpacketHandler, "");
 
         /*************************************************************************** 
          * Last thing to do is close the pcap handle 
@@ -160,7 +163,7 @@ public class PCap {
         pcap.close();
     }
 
-    public static boolean packetSizeChecking(PcapPacket packet) {
+    public static void addPacketSizeToMaps(PcapPacket packet) {
         //handling of packet size
         //sizeMap maps the destination of a packet to the total size of packets at that place.
         //destMap maps the destination of a packet to the total number of packets at that place.
@@ -187,7 +190,10 @@ public class PCap {
                 sourceMap.put(source, packet.getTotalSize());
             }
         }
-
+    }
+	
+	public static boolean checkPacketSize()
+	{
         for (String key : sizeMap.keySet()) {
             if (sizeMap.get(key) / destMap.get(key) > SIZE_THRESHOLD) {
                 //do something, the average packet is too big.
@@ -195,7 +201,7 @@ public class PCap {
             }
         }
         return true;//no action needed
-    }
+	}
 
     public static Map<String, Integer> getTopTrafficHosts() {
         SortedSet<String> keys = new TreeSet<String>(sourceMap.keySet());
@@ -223,7 +229,7 @@ public class PCap {
 
         averageCount = temp / 10;
 
-        return averageCount > PACKET_NUM_THRES;
+        return averageCount < PACKET_NUM_THRES;
     }
 
     public static boolean windowSizeCheck(PcapPacket packet) {

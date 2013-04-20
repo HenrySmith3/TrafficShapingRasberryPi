@@ -18,7 +18,7 @@ public class TC {
         String rules[];
 
         public static void main(String[] args) {
-          TC tc = new TC("wlan0");
+          TC tc = new TC("eth0");
           tc.up();
 //          tc.down();
         }
@@ -85,7 +85,7 @@ public class TC {
                 File init = new File("tc-init");
                 Scanner scanner = new Scanner(init);
                 int count = 0;
-                rules = new String[58];
+                rules = new String[100];
                 while (scanner.hasNextLine()) {
                         rules[count] = scanner.nextLine().replaceAll("enp2s1", eth);
                         count++;
