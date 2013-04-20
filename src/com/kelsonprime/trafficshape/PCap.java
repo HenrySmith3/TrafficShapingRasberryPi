@@ -129,7 +129,7 @@ public class PCap {
 				
 				
 				float packetSize = getAveragePacketSize();
-				System.out.println("Average packet size: %d", packetSize);
+				System.out.println("Average packet size: " + packetSize);
 
                 System.out.println(getTopTrafficHosts());
             }
