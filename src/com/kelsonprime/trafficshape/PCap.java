@@ -77,7 +77,7 @@ public class PCap {
         int i = 0;
 		int ethIndex = 0;
         for (PcapIf device : alldevs) {
-			if(device.getName() == "eth0") ethIndex = i;
+			if(device.getName().equals("eth0")) ethIndex = i;
             String description =
                     (device.getDescription() != null) ? device.getDescription()
                             : "No description available";
