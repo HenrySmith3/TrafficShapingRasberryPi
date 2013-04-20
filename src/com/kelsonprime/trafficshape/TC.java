@@ -17,12 +17,6 @@ public class TC {
         String envp[];
         String rules[];
 
-        public static void main(String[] args) {
-          TC tc = new TC("eth0");
-          tc.up();
-//          tc.down();
-        }
-
         public void setRate(int rate) {
           int oldRate = this.rate;
           this.rate = rate;
@@ -70,7 +64,6 @@ public class TC {
         private void exec(String cmd) {
                 try {
                         Runtime.getRuntime().exec(cmd, envp);
-                        System.out.println(cmd);
                 } catch (Exception e) {
                         System.out.println("Error: "+ cmd);
                 }
