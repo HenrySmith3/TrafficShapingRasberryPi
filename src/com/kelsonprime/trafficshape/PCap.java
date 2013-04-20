@@ -1,6 +1,7 @@
 package com.kelsonprime.trafficshape;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapIf;
@@ -33,17 +34,17 @@ import org.jnetpcap.protocol.tcpip.Tcp;
 public class PCap {
 
 
-    final static Map<String, Integer> sizeMap = new HashMap<String, Integer>();
-    final static Map<String, Integer> destMap = new HashMap<String, Integer>();
-    final static Map<String, Integer> sourceMap = new HashMap<String, Integer>();
+    final static Map<String, Integer> sizeMap = new ConcurrentHashMap<String, Integer>();
+    final static Map<String, Integer> destMap = new ConcurrentHashMap<String, Integer>();
+    final static Map<String, Integer> sourceMap = new ConcurrentHashMap<String, Integer>();
     static int packetCount;
     static int lastPacketCount;
     static int[] packetCountArr;
     static int packetCountArrInd;
     static boolean packetCountTCUpFlag;
 
-    final static Map<Integer, Integer> TCPwindowSizeTotalMap = new HashMap<Integer, Integer>();
-    final static Map<Integer, Integer> TCPnumPacketsMap = new HashMap<Integer, Integer>();
+    final static Map<Integer, Integer> TCPwindowSizeTotalMap = new ConcurrentHashMap<Integer, Integer>();
+    final static Map<Integer, Integer> TCPnumPacketsMap = new ConcurrentHashMap<Integer, Integer>();
 
     final static int SIZE_THRESHOLD = 100;//average size of packet before we get suspicious.
     final static int PACKET_NUM_MAX_THRES = 300;
@@ -78,7 +79,7 @@ public class PCap {
         int i = 0;
 		int ethIndex = 0;
         for (PcapIf device : alldevs) {
-			if(device.getName() == "eth0") ethIndex = i;
+			if(device.getName().equals("eth0")) ethIndex = i;
             String description =
                     (device.getDescription() != null) ? device.getDescription()
                             : "No description available";

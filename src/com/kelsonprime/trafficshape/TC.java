@@ -37,7 +37,7 @@ public class TC {
                 level = 0;
                 envp = new String[1];
                 envp[0] = "PATH=" + System.getProperty("java.library.path");
-                rate = 2560;
+                rate = 256000;
                 loadRules();
         }
 
