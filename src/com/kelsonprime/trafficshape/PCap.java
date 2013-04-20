@@ -226,9 +226,12 @@ public class PCap {
     }
 
     public static float packetCounter() {
-        packetCountArr[packetCountArrInd] = packetCount - lastPacketCount;
+        int packetDiff = packetCount - lastPacketCount;
+        packetCountArr[packetCountArrInd] = packetDiff;
         lastPacketCount = packetCount;
         packetCountArrInd = (packetCountArrInd + 1) % 10;
+
+        System.out.println(packetDiff + " packets in the last second");
 
         float averageCount;
         int temp = 0;
