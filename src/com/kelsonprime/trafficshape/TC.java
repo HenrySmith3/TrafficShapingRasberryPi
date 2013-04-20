@@ -4,6 +4,8 @@
  * 
  * Class to interface with our TC bash scripts
  */
+package com.kelsonprime.trafficshape;
+
 import java.util.Scanner;
 import java.io.FileNotFoundException;
 import java.io.File;

@@ -1,7 +1,7 @@
 #include "fields.tc"
 #include "ports.tc"
 
-#define INTERFACE enp2s1
+#define INTERFACE eth0
 
 dev INTERFACE {
         egress {
