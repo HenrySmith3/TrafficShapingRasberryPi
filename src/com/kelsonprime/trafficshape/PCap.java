@@ -37,9 +37,9 @@ public class PCap {
     final static Map<String, Integer> destMap = new HashMap<String, Integer>();
     final static Map<String, Integer> sourceMap = new HashMap<String, Integer>();
     static int packetCount;
-    static int packetPerSecond;
     static int[] packetCountArr;
     static int packetCountArrInd;
+    static boolean packetCountTCUpFlag;
 
     final static Map<Integer, Integer> TCPwindowSizeTotalMap = new HashMap<Integer, Integer>();
     final static Map<Integer, Integer> TCPnumPacketsMap = new HashMap<Integer, Integer>();
@@ -60,6 +60,7 @@ public class PCap {
         final List<PcapPacket> packets = new ArrayList<PcapPacket>();
         packetCount = 0;
         packetCountArr = new int[10];
+        packetCountTCUpFlag = false;
 
         /*************************************************************************** 
          * First get a list of devices on this system 
@@ -108,11 +109,13 @@ public class PCap {
 
         timer.schedule( new TimerTask() {
             public void run() {
-                if (packetCounter() > PACKET_NUM_MAX_THRES) {
+                if (!packetCountTCUpFlag && packetCounter() > PACKET_NUM_MAX_THRES) {
                     tc.up();
-                     System.out.println("THROTTLE MOAR INTERWEBZ");
-                } else if (packetCounter() < PACKET_NUM_MIN_THRES) {
+                    System.out.println("Packet Count Throttling");
+                    packetCountTCUpFlag = true;
+                } else if (packetCountTCUpFlag && packetCounter() < PACKET_NUM_MIN_THRES) {
                     tc.down();
+                    packetCountTCUpFlag = false;
                 }
 				
                 if (!checkPacketSize()) {
