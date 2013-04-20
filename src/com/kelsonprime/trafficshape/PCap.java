@@ -45,7 +45,8 @@ public class PCap {
     final static Map<Integer, Integer> TCPnumPacketsMap = new HashMap<Integer, Integer>();
 
     final static int SIZE_THRESHOLD = 100;//average size of packet before we get suspicious.
-    final static int PACKET_NUM_THRES = 1000;
+    final static int PACKET_NUM_MAX_THRES = 300;
+    final static int PACKET_NUM_MIN_THRES = 175;
 
     /**
      * Main startup method 
@@ -107,15 +108,16 @@ public class PCap {
 
         timer.schedule( new TimerTask() {
             public void run() {
-				System.out.println("Packets per second: " + packetPerSecond);
-                if (!packetCounter()) {
-//                    tc.up();
+                if (packetCounter() > PACKET_NUM_MAX_THRES) {
+                    tc.up();
                      System.out.println("THROTTLE MOAR INTERWEBZ");
+                } else if (packetCounter() < PACKET_NUM_MIN_THRES) {
+                    tc.down();
                 }
 				
                 if (!checkPacketSize()) {
                     System.out.println("Throttling INTERWEBZ");
-//                    tc.up();
+                    tc.up();
                 }
 
                 System.out.println(getTopTrafficHosts());
@@ -216,7 +218,7 @@ public class PCap {
         return sortedMap;
     }
 
-    public static boolean packetCounter() {
+    public static float packetCounter() {
         packetCountArr[packetCountArrInd] = packetCount;
         packetCount = 0;
         packetCountArrInd = (packetCountArrInd + 1) % 10;
@@ -229,7 +231,7 @@ public class PCap {
 
         averageCount = temp / 10;
 
-        return averageCount < PACKET_NUM_THRES;
+        return averageCount;
     }
 
     public static boolean windowSizeCheck(PcapPacket packet) {
