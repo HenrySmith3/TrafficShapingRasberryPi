@@ -126,6 +126,10 @@ public class PCap {
                     System.out.println("Throttling INTERWEBZ");
                     tc.up();
                 }
+				
+				
+				float packetSize = getAveragePacketSize();
+				System.out.println("Average packet size: %d", packetSize);
 
                 System.out.println(getTopTrafficHosts());
             }
@@ -210,6 +214,17 @@ public class PCap {
             }
         }
         return true;//no action needed
+	}
+	
+	public static float getAveragePacketSize()
+	{
+		int totalSize = 0;
+		int totalNum = 0;
+		for (String key : sizeMap.keySet()) {
+			totalSize += sizeMap.get(key);
+			totalNum += destMap.get(key);
+		}
+		return totalSize/totalNum;
 	}
 
     public static Map<String, Integer> getTopTrafficHosts() {
