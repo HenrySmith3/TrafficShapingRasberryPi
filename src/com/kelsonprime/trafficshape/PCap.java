@@ -113,7 +113,7 @@ public class PCap {
                      System.out.println("THROTTLE MOAR INTERWEBZ");
                 }
 				
-                if (!packetSizeChecking(packet)) {
+                if (!checkPacketSize()) {
                     System.out.println("Throttling INTERWEBZ");
 //                    tc.up();
                 }
