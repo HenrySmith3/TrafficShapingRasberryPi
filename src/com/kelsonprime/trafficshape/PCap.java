@@ -1,6 +1,7 @@
 package com.kelsonprime.trafficshape;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapIf;
@@ -33,16 +34,16 @@ import org.jnetpcap.protocol.tcpip.Tcp;
 public class PCap {
 
 
-    final static Map<String, Integer> sizeMap = new HashMap<String, Integer>();
-    final static Map<String, Integer> destMap = new HashMap<String, Integer>();
-    final static Map<String, Integer> sourceMap = new HashMap<String, Integer>();
+    final static Map<String, Integer> sizeMap = new ConcurrentHashMap<String, Integer>();
+    final static Map<String, Integer> destMap = new ConcurrentHashMap<String, Integer>();
+    final static Map<String, Integer> sourceMap = new ConcurrentHashMap<String, Integer>();
     static int packetCount;
     static int[] packetCountArr;
     static int packetCountArrInd;
     static boolean packetCountTCUpFlag;
 
-    final static Map<Integer, Integer> TCPwindowSizeTotalMap = new HashMap<Integer, Integer>();
-    final static Map<Integer, Integer> TCPnumPacketsMap = new HashMap<Integer, Integer>();
+    final static Map<Integer, Integer> TCPwindowSizeTotalMap = new ConcurrentHashMap<Integer, Integer>();
+    final static Map<Integer, Integer> TCPnumPacketsMap = new ConcurrentHashMap<Integer, Integer>();
 
     final static int SIZE_THRESHOLD = 100;//average size of packet before we get suspicious.
     final static int PACKET_NUM_MAX_THRES = 300;
