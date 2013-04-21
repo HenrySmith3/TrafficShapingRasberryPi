@@ -42,11 +42,13 @@ public class PCap {
     static int[] packetCountArr;
     static int packetCountArrInd;
     static boolean packetCountTCUpFlag;
+    static boolean packetSizeFlag;
 
     final static Map<Integer, Integer> TCPwindowSizeTotalMap = new ConcurrentHashMap<Integer, Integer>();
     final static Map<Integer, Integer> TCPnumPacketsMap = new ConcurrentHashMap<Integer, Integer>();
 
-    final static int SIZE_THRESHOLD = 100;//average size of packet before we get suspicious.
+    final static int SIZE_THRESHOLD_MAX = 1100;//average size of packet before we get suspicious.
+    final static int SIZE_THRESHOLD_MIN = 900;
     final static int PACKET_NUM_MAX_THRES = 300;
     final static int PACKET_NUM_MIN_THRES = 175;
 
@@ -63,6 +65,7 @@ public class PCap {
         packetCount = 0;
         packetCountArr = new int[10];
         packetCountTCUpFlag = false;
+        packetSizeFlag = false;
 
         /*************************************************************************** 
          * First get a list of devices on this system 
@@ -121,11 +124,16 @@ public class PCap {
                     tc.down();
                     packetCountTCUpFlag = false;
                 }
-				
-                if (!checkPacketSize()) {
-                    System.out.println("Throttling INTERWEBZ");
+
+                if (!packetSizeFlag && getAveragePacketSize() > SIZE_THRESHOLD_MAX) {
                     tc.up();
+                    System.out.println("Packet Size Throttling");
+                    packetSizeFlag = true;
+                } else if (packetCountTCUpFlag && packetCounter() < SIZE_THRESHOLD_MIN) {
+                    tc.down();
+                    packetSizeFlag = false;
                 }
+
 				
 				
 				float packetSize = getAveragePacketSize();
@@ -205,17 +213,6 @@ public class PCap {
         }
     }
 	
-	public static boolean checkPacketSize()
-	{
-        for (String key : sizeMap.keySet()) {
-            if (sizeMap.get(key) / destMap.get(key) > SIZE_THRESHOLD) {
-                //do something, the average packet is too big.
-                return false;//action needed
-            }
-        }
-        return true;//no action needed
-	}
-	
 	public static float getAveragePacketSize()
 	{
 		int totalSize = 0;
@@ -224,6 +221,8 @@ public class PCap {
 			totalSize += sizeMap.get(key);
 			totalNum += destMap.get(key);
 		}
+        if (totalNum == 0)
+            return 0;
 		return totalSize/totalNum;
 	}
 
